@@ -44,6 +44,10 @@ ifeq ($(PKG_VERSION),9.3.0)
   PKG_HASH:=71e197867611f6054aa1119b13a0c0abac12834765fe2d81f35ac57f84f742d1
 endif
 
+ifeq ($(PKG_VERSION),10.2.0)
+  PKG_HASH:=b8dd4368bb9c7f0b98188317ee0254dd8cc99d1e3a18d0ff146c855fe16c1d8c
+endif
+
 PATCH_DIR=../patches/$(GCC_VERSION)
 
 BUGURL=http://bugs.openwrt.org/
@@ -104,6 +108,7 @@ GCC_CONFIGURE:= \
 		--disable-multilib \
 		--disable-libmpx \
 		--disable-nls \
+		--disable-libssp \
 		$(GRAPHITE_CONFIGURE) \
 		--with-host-libstdcxx=-lstdc++ \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
@@ -129,14 +134,6 @@ endif
 ifneq ($(CONFIG_GCC_DEFAULT_SSP),)
   GCC_CONFIGURE+= \
 		--enable-default-ssp
-endif
-
-ifneq ($(CONFIG_GCC_LIBSSP),)
-  GCC_CONFIGURE+= \
-		--enable-libssp
-else
-  GCC_CONFIGURE+= \
-		--disable-libssp
 endif
 
 ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2016 OpenWrt.org
+# Copyright (C) 2006-2020 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=glibc
 PKG_VERSION:=2.31
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=109474122400ca7d60782b131dc867a5c1f2fe55
-PKG_MIRROR_HASH:=5a04a24e69eace9eb892f0b48b869d31d4900ad656099064b6a9d8a342c13d8c
+PKG_SOURCE_VERSION:=4bc9918c998085800ecf5bbb3c863e66ea6252a0
+PKG_MIRROR_HASH:=51877ffff6819b5ccc004a842de755c6c203996d673d94d7013927712e252c17
 PKG_SOURCE_URL:=https://sourceware.org/git/glibc.git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
@@ -39,7 +40,6 @@ ifeq ($(ARCH),mips64)
   endif
 endif
 
-
 # -Os miscompiles w. 2.24 gcc5/gcc6
 # only -O2 tested by upstream changeset
 # "Optimize i386 syscall inlining for GCC 5"
@@ -61,6 +61,8 @@ GLIBC_CONFIGURE:= \
 		--without-cvs \
 		--enable-add-ons \
 		--$(if $(CONFIG_SOFT_FLOAT),without,with)-fp \
+		  $(if $(CONFIG_PKG_CC_STACKPROTECTOR_REGULAR),--enable-stack-protector=yes) \
+		  $(if $(CONFIG_PKG_CC_STACKPROTECTOR_STRONG),--enable-stack-protector=strong) \
 		--enable-kernel=4.14.0
 
 export libc_cv_ssp=no

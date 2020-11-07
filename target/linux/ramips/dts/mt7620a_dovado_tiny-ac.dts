@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
@@ -9,22 +7,18 @@
 	compatible = "dovado,tiny-ac", "ralink,mt7620a-soc";
 	model = "Dovado Tiny AC";
 
-	chosen {
-		bootargs = "console=ttyS0,57600";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
 		usb {
-			label = "tiny-ac:green:usb";
+			label = "green:usb";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		wifi {
-			label = "tiny-ac:orange:wifi";
+			label = "orange:wifi";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -112,9 +106,9 @@
 };
 
 &ethernet {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+
 	mediatek,portmap = "llllw";
 
 	port@4 {

@@ -52,7 +52,7 @@ define Device/alfa-network_tube-e4g
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Tube-E4G
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools uqmi -iwinfo \
-	-kmod-rt2800-soc -wpad-basic
+	-kmod-rt2800-soc -wpad-basic-wolfssl
 endef
 TARGET_DEVICES += alfa-network_tube-e4g
 
@@ -85,6 +85,16 @@ define Device/asus_rt-ac51u
   SUPPORTED_DEVICES += rt-ac51u
 endef
 TARGET_DEVICES += asus_rt-ac51u
+
+define Device/asus_rt-ac54u
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Asus
+  DEVICE_MODEL := RT-AC54U
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += asus_rt-ac54u
 
 define Device/asus_rt-n12p
   SOC := mt7620n
@@ -390,8 +400,8 @@ define Device/fon_fon2601
   DEVICE_VENDOR := Fon
   DEVICE_MODEL := FON2601
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
-  KERNEL_INITRAMFS := $$(KERNEL) | fonfxcimage
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | fonfxcimage | \
+  KERNEL_INITRAMFS := $$(KERNEL) | uimage-padhdr
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | uimage-padhdr | \
 	pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += fon_fon2601
@@ -477,6 +487,29 @@ define Device/hnet_c108
   SUPPORTED_DEVICES += c108
 endef
 TARGET_DEVICES += hnet_c108
+
+define Device/sunvalley_filehub_common
+  SOC := mt7620n
+  IMAGE_SIZE := 6144k
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-ralink
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x200000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | lzma | \
+	uImage lzma
+  KERNEL := $(KERNEL_DTB) | uImage lzma -M 0x4f4b4c49
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-loader-okli $(1) | check-size 64k
+  IMAGE/rootfs.bin := $$(sysupgrade_bin) | check-size
+endef
+
+define Device/hootoo_ht-tm05
+  $(Device/sunvalley_filehub_common)
+  DEVICE_VENDOR := HooToo
+  DEVICE_MODEL := HT-TM05
+endef
+TARGET_DEVICES += hootoo_ht-tm05
 
 define Device/iodata_wn-ac1167gr
   SOC := mt7620a
@@ -660,6 +693,19 @@ define Device/netgear_ex3700
 endef
 TARGET_DEVICES += netgear_ex3700
 
+define Device/netgear_ex6120
+  SOC := mt7620a
+  NETGEAR_BOARD_ID := U12H319T30_NETGEAR
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGES += factory.chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size | netgear-chk
+  DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := EX6120
+endef
+TARGET_DEVICES += netgear_ex6120
+
 define Device/netgear_ex6130
   SOC := mt7620a
   NETGEAR_BOARD_ID := U12H319T50_NETGEAR
@@ -672,6 +718,22 @@ define Device/netgear_ex6130
   DEVICE_MODEL := EX6130
 endef
 TARGET_DEVICES += netgear_ex6130
+
+define Device/netgear_jwnr2010-v5
+  $(Device/netgear_sercomm_nor)
+  SOC := mt7620n
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 3840k
+  DEVICE_MODEL := JWNR2010
+  DEVICE_VARIANT := v5
+  SERCOMM_HWNAME := N300
+  SERCOMM_HWID := ASW
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0040
+  SERCOMM_PAD := 128k
+  DEFAULT := n
+endef
+TARGET_DEVICES += netgear_jwnr2010-v5
 
 define Device/netgear_wn3000rp-v3
   SOC := mt7620a
@@ -689,6 +751,17 @@ define Device/netgear_wn3000rp-v3
   SUPPORTED_DEVICES += wn3000rpv3
 endef
 TARGET_DEVICES += netgear_wn3000rp-v3
+
+define Device/netis_wf2770
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := WF2770_0.0.00
+  DEVICE_VENDOR := NETIS
+  DEVICE_MODEL := WF2770
+  DEVICE_PACKAGES := kmod-mt76x0e
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | netis-tail WF2770 | uImage lzma
+endef
+TARGET_DEVICES += netis_wf2770
 
 define Device/nexx_wt3020-4m
   SOC := mt7620n
@@ -855,14 +928,16 @@ define Device/ralink_mt7620a-v22sg-evb
 endef
 TARGET_DEVICES += ralink_mt7620a-v22sg-evb
 
-define Device/ravpower_wd03
-  SOC := mt7620n
-  IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Ravpower
-  DEVICE_MODEL := WD03
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+define Device/ravpower_rp-wd03
+  $(Device/sunvalley_filehub_common)
+  DEVICE_VENDOR := RAVPower
+  DEVICE_MODEL := RP-WD03
+  SUPPORTED_DEVICES += ravpower,wd03
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition design has changed compared to older versions (up to 19.07) due to kernel size restrictions. \
+	Upgrade via sysupgrade mechanism is not possible, so new installation via TFTP is required.
 endef
-TARGET_DEVICES += ravpower_wd03
+TARGET_DEVICES += ravpower_rp-wd03
 
 define Device/sanlinking_d240
   SOC := mt7620a
@@ -953,7 +1028,7 @@ define Device/tplink_archer-mr200
   TPLINK_HWID := 0xd7500001
   TPLINK_HWREV := 0x4a
   IMAGES := sysupgrade.bin
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net kmod-usb-net-rndis \
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-net-rndis \
 	kmod-usb-serial kmod-usb-serial-option adb-enablemodem
   DEVICE_MODEL := Archer MR200
   SUPPORTED_DEVICES += mr200
@@ -984,6 +1059,15 @@ define Device/tplink_re210-v1
 endef
 TARGET_DEVICES += tplink_re210-v1
 
+define Device/trendnet_tew-810dr
+  SOC := mt7620a
+  DEVICE_PACKAGES := kmod-mt76x0e
+  DEVICE_VENDOR := TRENDnet
+  DEVICE_MODEL := TEW-810DR
+  IMAGE_SIZE := 6720k
+endef
+TARGET_DEVICES += trendnet_tew-810dr
+
 define Device/vonets_var11n-300
   SOC := mt7620n
   IMAGE_SIZE := 3776k
@@ -993,6 +1077,15 @@ define Device/vonets_var11n-300
   DEFAULT := n
 endef
 TARGET_DEVICES += vonets_var11n-300
+
+define Device/wavlink_wl-wn530hg4
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN530HG4
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += wavlink_wl-wn530hg4
 
 define Device/wrtnode_wrtnode
   SOC := mt7620n

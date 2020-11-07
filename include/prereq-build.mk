@@ -26,6 +26,7 @@ $(eval $(call TestHostCommand,proper-umask, \
 	Please build with umask 022 - other values produce broken packages, \
 	umask | grep -xE 0?0[012][012]))
 
+ifndef IB
 $(eval $(call SetupHostCommand,gcc, \
 	Please install the GNU C Compiler (gcc) 4.8 or later, \
 	$(CC) -dumpversion | grep -E '^(4\.[8-9]|[5-9]\.?|10\.?)', \
@@ -37,7 +38,9 @@ $(eval $(call TestHostCommand,working-gcc, \
 	it appears to be broken, \
 	echo 'int main(int argc, char **argv) { return 0; }' | \
 		gcc -x c -o $(TMP_DIR)/a.out -))
+endif
 
+ifndef IB
 $(eval $(call SetupHostCommand,g++, \
 	Please install the GNU C++ Compiler (g++) 4.8 or later, \
 	$(CXX) -dumpversion | grep -E '^(4\.[8-9]|[5-9]\.?|10\.?)', \
@@ -50,17 +53,24 @@ $(eval $(call TestHostCommand,working-g++, \
 	echo 'int main(int argc, char **argv) { return 0; }' | \
 		g++ -x c++ -o $(TMP_DIR)/a.out - -lstdc++ && \
 		$(TMP_DIR)/a.out))
+endif
 
+ifndef IB
 $(eval $(call TestHostCommand,ncurses, \
 	Please install ncurses. (Missing libncurses.so or ncurses.h), \
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
+endif
 
 ifeq ($(HOST_OS),Linux)
   zlib_link_flags := -Wl,-Bstatic -lz -Wl,-Bdynamic
 else
   zlib_link_flags := -lz
 endif
+
+$(eval $(call TestHostCommand,perl-data-dumper, \
+	Please install the Perl Data::Dumper module, \
+	perl -MData::Dumper -e 1))
 
 $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
@@ -107,6 +117,10 @@ $(eval $(call SetupHostCommand,awk,Please install GNU 'awk', \
 $(eval $(call SetupHostCommand,grep,Please install GNU 'grep', \
 	ggrep --version 2>&1 | grep GNU, \
 	grep --version 2>&1 | grep GNU))
+
+$(eval $(call SetupHostCommand,egrep,Please install GNU 'grep', \
+	gegrep --version 2>&1 | grep GNU, \
+	egrep --version 2>&1 | grep GNU))
 
 $(eval $(call SetupHostCommand,getopt, \
 	Please install an extended getopt version that supports --long, \

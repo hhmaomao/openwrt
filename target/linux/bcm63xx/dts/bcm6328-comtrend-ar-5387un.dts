@@ -1,5 +1,3 @@
-/dts-v1/;
-
 #include "bcm6328.dtsi"
 
 #include <dt-bindings/input/input.h>
@@ -31,32 +29,6 @@
 			gpios = <&pinctrl 23 1>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		inet_red {
-			label = "AR-5387un:red:inet";
-			gpios = <&pinctrl 1 0>;
-		};
-		power_red {
-			label = "AR-5387un:red:power";
-			gpios = <&pinctrl 4 0>;
-		};
-		inet_green {
-			label = "AR-5387un:green:inet";
-			gpios = <&pinctrl 7 0>;
-		};
-		led_power_green: power_green {
-			label = "AR-5387un:green:power";
-			gpios = <&pinctrl 8 0>;
-			default-state = "on";
-		};
-		dsl_green {
-			label = "AR-5387un:green:dsl";
-			gpios = <&pinctrl 11 1>;
 		};
 	};
 };
@@ -96,6 +68,48 @@
 				label = "nvram";
 			};
 		};
+	};
+};
+
+&leds {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_leds>;
+
+	led@1 {
+		reg = <1>;
+		label = "red:inet";
+	};
+
+	led@4 {
+		reg = <4>;
+		label = "red:power";
+	};
+
+	led@7 {
+		reg = <7>;
+		label = "green:inet";
+	};
+
+	led_power_green: led@8 {
+		reg = <8>;
+		label = "green:power";
+		default-state = "on";
+	};
+
+	led@11 {
+		reg = <11>;
+		active-low;
+		label = "green:dsl";
+	};
+};
+
+&pinctrl {
+	pinctrl_leds: leds {
+		function = "led";
+		pins = "gpio1", "gpio4", "gpio7",
+		       "gpio8", "gpio11";
 	};
 };
 

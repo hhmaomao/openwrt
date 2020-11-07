@@ -84,7 +84,7 @@ PROFILE_LIST = $(foreach p,$(PROFILE_NAMES), \
 
 staging_dir/host/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
-	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
+	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f $(TOPDIR)/include/prereq-build.mk prereq IB=1 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
@@ -138,7 +138,10 @@ package_index: FORCE
 	$(OPKG) update >&2 || true
 
 package_reload:
-	if [ ! -f "$(PACKAGE_DIR)/Packages" ] || [ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || [ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ]; then \
+	if [ -d "$(PACKAGE_DIR)" ] && ( \
+			[ ! -f "$(PACKAGE_DIR)/Packages" ] || \
+			[ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || \
+			[ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ] ); then \
 		echo "Package list missing or not up-to-date, generating it." >&2 ;\
 		$(MAKE) package_index; \
 	else \
@@ -153,8 +156,8 @@ package_list: FORCE
 package_install: FORCE
 	@echo
 	@echo Installing packages...
-	$(OPKG) install $(firstword $(wildcard $(PACKAGE_DIR)/libc_*.ipk $(PACKAGE_DIR)/base/libc_*.ipk))
-	$(OPKG) install $(firstword $(wildcard $(PACKAGE_DIR)/kernel_*.ipk $(PACKAGE_DIR)/base/kernel_*.ipk))
+	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/libc_*.ipk $(PACKAGE_DIR)/libc_*.ipk))
+	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/kernel_*.ipk $(PACKAGE_DIR)/kernel_*.ipk))
 	$(OPKG) install $(BUILD_PACKAGES)
 
 prepare_rootfs: FORCE
@@ -168,6 +171,7 @@ prepare_rootfs: FORCE
 build_image: FORCE
 	@echo
 	@echo Building images...
+	rm -rf $(BUILD_DIR)/json_info_files/
 	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
 		$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)")
 
@@ -219,4 +223,12 @@ manifest: FORCE
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)"))
 
-.SILENT: help info image manifest
+whatdepends: FORCE
+ifeq ($(PACKAGE),)
+	@echo 'Variable `PACKAGE` is not set but required by `whatdepends`'
+	@exit 1
+endif
+	@$(MAKE) -s package_reload
+	@$(OPKG) whatdepends -A $(PACKAGE)
+
+.SILENT: help info image manifest whatdepends
